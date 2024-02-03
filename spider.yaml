@@ -3,14 +3,32 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.0**
+    **Version: 1.1**
     
     Handle Spider Ramses communication
     
+    ## Configure ramses_cc integration
+    
+    Edit the ramsaes_cc configuration and add the advanced_features to configuration.yaml.
+    
+    ```
+    
+    ramses_cc:
+      advanced_features:
+        send_packet: true
+        message_events: "RQ.* (01FF|1FC9)"
+    
+    ```
+    
+    ## Add a Generic Thermostat
+    
     Create a heater input_boolean helper which can be shared between thermostats.
-    Heater is a required field.
+    Heater is a required field for generic_thermostat.
     
     Add a Generic Thermostat in configuration.yaml:
+    
+    ```
+    
     climate:
       - platform: generic_thermostat
         name: Thermostat Room 1
@@ -18,9 +36,10 @@ blueprint:
         target_sensor: sensor.itho_autotemp_1_room_3_temp
         target_temp_step: 0.5
         
-    The target_sensor is the entity that holds the target temperature. 
-    I use the entity which you get from the integration with the addon for Autotemp. 
+    ``` 
     
+    The target_sensor is the entity that holds the room temperature. 
+  
   domain: automation
   input:
     thermostat:
@@ -86,6 +105,3 @@ action:
                 {{'008080'}}{{ ('%x' % ((setpoint | float * 2)) | round) | upper}}28{{'D0000000143C80800000B40080800280FF80040000'}}
 trace:
   stored_traces: 10
-  
-  
-  
