@@ -9,7 +9,7 @@ blueprint:
     
     ## Configure ramses_cc integration
     
-    Edit the ramsaes_cc configuration and add the advanced_features to configuration.yaml.
+    Edit the ramses_cc configuration and add the advanced_features to configuration.yaml.
     
     ```
     
