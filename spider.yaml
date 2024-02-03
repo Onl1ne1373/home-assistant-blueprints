@@ -1,0 +1,91 @@
+blueprint:
+  name: Spider
+  description: >
+    # Spider
+    
+    **Version: 1.0**
+    
+    Handle Spider Ramses communication
+    
+    Create a heater input_boolean helper which can be shared between thermostats.
+    Heater is a required field.
+    
+    Add a Generic Thermostat in configuration.yaml:
+    climate:
+      - platform: generic_thermostat
+        name: Thermostat Room 1
+        heater: input_boolean.thermostat_heater
+        target_sensor: sensor.itho_autotemp_1_room_3_temp
+        target_temp_step: 0.5
+        
+    The target_sensor is the entity that holds the target temperature. 
+    I use the entity which you get from the integration with the addon for Autotemp. 
+    
+  domain: automation
+  input:
+    thermostat:
+      name: Thermostat
+      description: This must be a Generic Thermostat entity
+      selector:
+        entity:
+          domain: climate
+    spider_address:
+      name: Spider Address
+      description: The Spider address (starting with 21)
+
+trigger:
+  - platform: event
+    event_type: ramses_cc_message
+    id: message_received
+  - platform: state
+    entity_id: !input thermostat
+    attribute: temperature
+    id: setpoint_changed
+    
+variables:
+  spider_address: !input "spider_address"
+  thermostat: !input "thermostat"
+  setpoint: '{{ state_attr(thermostat, "temperature") }}'
+  
+condition:
+
+action:
+  - choose:
+      # Received message from ramses
+      - conditions:
+          - condition: trigger
+            id:
+              - message_received
+          - condition: template
+            value_template: "{{ trigger.event.data.verb == \"RQ\" }}"
+          - condition: template
+            value_template: "{{ trigger.event.data.code == \"01FF\" }}"
+          - condition: template
+            value_template: "{{ trigger.event.data.src == spider_address }}"
+        sequence:
+          - service: ramses_cc.send_packet
+            data:
+              device_id: !input spider_address
+              verb: RP
+              code: 01FF
+              payload: >
+                {{'008080'}}{{ ('%x' % ((setpoint | float * 2)) | round) | upper}}28{{'D0000000143C80800000B40080800280FF80040000'}}
+               
+      # Setpoint changed in Generic Thermostat            
+      - conditions:
+          - condition: trigger
+            id:
+              - setpoint_changed
+        sequence:
+          - service: ramses_cc.send_packet
+            data:
+              device_id: !input spider_address
+              verb: W
+              code: 01FF
+              payload: >
+                {{'008080'}}{{ ('%x' % ((setpoint | float * 2)) | round) | upper}}28{{'D0000000143C80800000B40080800280FF80040000'}}
+trace:
+  stored_traces: 10
+  
+  
+  
