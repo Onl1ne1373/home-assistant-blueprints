@@ -3,7 +3,7 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.2**
+    **Version: 1.4**
     
     Handle Spider Ramses communication
     
@@ -63,7 +63,7 @@ trigger:
     
 variables:
   spider_address: !input "spider_address"
-  bind_address: '{{ "%x" % ((spider_address[:2] | int) * (2 ** 18) + (spider_address[-6:] | int)) }}'
+  bind_address: '{{ "%02X" % ((spider_address[:2] | int) * (2 ** 18) + (spider_address[-6:] | int)) }}'
   thermostat: !input "thermostat"
   setpoint: '{{ state_attr(thermostat, "temperature") }}'
   
@@ -109,7 +109,7 @@ action:
               verb: RP
               code: 01FF
               payload: >
-                {{'008080'}}{{ ('%x' % ((setpoint | float * 2)) | round) | upper}}28{{'D0000000143C80800000B40080800280FF80040000'}}
+                {{'008080'}}{{ ('%02X' % ((setpoint | float * 2)) | round)}}28{{'D0000000143C80800000B40080800280FF80040000'}}
                
       # Setpoint changed in Generic Thermostat            
       - conditions:
@@ -123,6 +123,9 @@ action:
               verb: W
               code: 01FF
               payload: >
-                {{'008080'}}{{ ('%x' % ((setpoint | float * 2)) | round) | upper}}28{{'D0000000143C80800000B40080800280FF80040000'}}
+                {{'008080'}}{{ ('%02X' % ((setpoint | float * 2)) | round)}}28{{'D0000000143C80800000B40080800280FF80040000'}}
 trace:
   stored_traces: 10
+  
+  
+  
