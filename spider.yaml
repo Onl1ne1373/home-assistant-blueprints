@@ -3,7 +3,7 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.4**
+    **Version: 1.5**
     
     Handle Spider Ramses communication
     
@@ -71,17 +71,17 @@ condition:
 
 action:
   - choose:
-      # Received binding message from ramses
-      - conditions:
+      - alias: "Received binding message from ramses"
+        conditions:
           - condition: trigger
             id:
               - message_received
           - condition: template
-            value_template: "{{ trigger.event.data.verb == \"I\" }}"
+            value_template: '{{ trigger.event.data.verb == "I" }}'
           - condition: template
-            value_template: "{{ trigger.event.data.code == \"1FC9\" }}"
+            value_template: '{{ trigger.event.data.code == "1FC9" }}'
           - condition: template
-            value_template: "{{ trigger.event.data.src == spider_address }}"
+            value_template: '{{ trigger.event.data.src == spider_address }}'
         sequence:
           - service: ramses_cc.send_packet
             data:
@@ -91,17 +91,17 @@ action:
               payload: >
                 {{'0001FF'}}{{bind_address}}003EF0{{bind_address}}'}}
       
-      # Received setpoint message from ramses
-      - conditions:
+      - alias: "Received setpoint message from ramses"
+        conditions:
           - condition: trigger
             id:
               - message_received
           - condition: template
-            value_template: "{{ trigger.event.data.verb == \"RQ\" }}"
+            value_template: '{{ trigger.event.data.verb == "RQ" }}'
           - condition: template
-            value_template: "{{ trigger.event.data.code == \"01FF\" }}"
+            value_template: '{{ trigger.event.data.code == "01FF" }}'
           - condition: template
-            value_template: "{{ trigger.event.data.src == spider_address }}"
+            value_template: '{{ trigger.event.data.src == spider_address }}'
         sequence:
           - service: ramses_cc.send_packet
             data:
@@ -109,10 +109,10 @@ action:
               verb: RP
               code: 01FF
               payload: >
-                {{'008080'}}{{ ('%02X' % ((setpoint | float * 2)) | round)}}28{{'D0000000143C80800000B40080800280FF80040000'}}
+                008080{{ ('%02X' % ((setpoint | float * 2)) | round)}}28D0000000143C80800000B40080800280FF80040000
                
-      # Setpoint changed in Generic Thermostat            
-      - conditions:
+      - alias: "Setpoint changed in Generic Thermostat"
+        conditions:
           - condition: trigger
             id:
               - setpoint_changed
@@ -123,7 +123,7 @@ action:
               verb: W
               code: 01FF
               payload: >
-                {{'008080'}}{{ ('%02X' % ((setpoint | float * 2)) | round)}}28{{'D0000000143C80800000B40080800280FF80040000'}}
+                008080{{ ('%02X' % ((setpoint | float * 2)) | round)}}28D0000000143C80800000B40080800280FF80040000
 trace:
   stored_traces: 10
   
