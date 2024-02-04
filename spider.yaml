@@ -3,7 +3,7 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.6**
+    **Version: 1.7**
     
     Handle Spider Ramses communication
     
@@ -51,6 +51,35 @@ blueprint:
     spider_address:
       name: Spider Address
       description: The Spider address (starting with 21)
+    normal_setpoint:
+      name: Normal setpoint
+      description: The default setpoint when no schema is active
+      default: 20
+      selector:
+        number:
+          min: 15
+          max: 24
+          step: 0.5
+          unit_of_measurement: "C"
+          mode: slider
+    schedule_setpoint:
+      name: Schedule setpoint
+      description: The setpoint when schedule is active
+      default: 18
+      selector:
+        number:
+          min: 15
+          max: 24
+          step: 0.5
+          unit_of_measurement: "C"
+          mode: slider
+    schedule:
+      name: Schedule
+      description: A time schedule for the "Schedule setpoint"
+      default: {}
+      selector:
+        entity:
+          domain: schedule
 
 trigger:
   - platform: event
@@ -60,6 +89,9 @@ trigger:
     entity_id: !input thermostat
     attribute: temperature
     id: setpoint_changed
+  - platform: state
+    entity_id: !input schedule
+    id: schedule_changed
     
 variables:
   spider_address: !input "spider_address"
@@ -125,8 +157,32 @@ action:
               code: 01FF
               payload: >
                 008080{{ setpoint_payload }}28D0000000143C80800000B40080800280FF80040000
+      - alias: "Schedule changed to on, so change to schedule setpoint"
+        conditions:
+          - condition: trigger
+            id:
+              - schedule_changed
+          - condition: template
+            value_template: '{{ trigger.to_state.state  == "on" }}'
+        sequence:
+          - service: climate.set_temperature
+            target:
+              entity_id: !input thermostat
+            data:
+              temperature: !input schedule_setpoint
+      - alias: "Schedule changed to off, so change to normal setpoint"
+        conditions:
+          - condition: trigger
+            id:
+              - schedule_changed
+          - condition: template
+            value_template: '{{ trigger.to_state.state  == "off" }}'
+        sequence:
+          - service: climate.set_temperature
+            target:
+              entity_id: !input thermostat
+            data:
+              temperature: !input normal_setpoint
+mode: queued           
 trace:
   stored_traces: 10
-  
-  
-  
