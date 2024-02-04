@@ -3,7 +3,7 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.8**
+    **Version: 1.9**
     
     Handle Spider Ramses communication
     
@@ -24,6 +24,7 @@ blueprint:
     
     Create a heater input_boolean helper which can be shared between thermostats.
     Heater is a required field for generic_thermostat.
+    And also add a helper schedule.
     
     Add a Generic Thermostat in configuration.yaml:
     
@@ -76,7 +77,7 @@ blueprint:
     schedule:
       name: Schedule
       description: A time schedule for the "Schedule setpoint"
-      default: {}
+      # default: {}
       selector:
         entity:
           domain: schedule
