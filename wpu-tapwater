@@ -1,11 +1,18 @@
 blueprint:
   name: Tapwater Eco Schedule
-  description: A time schedule to set tapwater heating to eco, effectively disabling it
+  description: >
+    # Tapwater Eco Schedule
+    
+    A time schedule to set tapwater heating to eco, effectively disabling it.
+    
+    This blueprint must be used with the addon of Arjen Hiemstra: https://www.nrgwatch.nl/product/itho-non-cve-wifi-module
+    But the manual operation mode used is only available in the beta firmware of vliegnerd.
+    This beta firmware and discussion are available here: https://gathering.tweakers.net/forum/list_messages/2154474/0 
   domain: automation
   input:
     mqtt_topic:
       name: MQTT Command Topic
-      description: 
+      description: The command topic this blueprint publishes its commands on
       default: itho/cmd
     schedule:
       name: Schedule
@@ -44,7 +51,7 @@ trigger:
   minutes: /5
   id: every_5_min
   
-variables:
+# variables:
 
 condition:
 action:
