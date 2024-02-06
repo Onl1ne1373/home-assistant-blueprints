@@ -3,11 +3,20 @@ blueprint:
   description: >
     # Tapwater Eco Schedule
     
+    **Version: 1.0**
+    
     A time schedule to set tapwater heating to eco, effectively disabling it.
     
+    ## Requirements
+    
     This blueprint must be used with the addon of Arjen Hiemstra: https://www.nrgwatch.nl/product/itho-non-cve-wifi-module
+    
     But the manual operation mode used is only available in the beta firmware of vliegnerd.
     This beta firmware and discussion are available here: https://gathering.tweakers.net/forum/list_messages/2154474/0 
+    
+    The manual operation time should be set at 30 min, this is done by setting 4 in WPU 5G heatpump settings.
+    If for whatever reason the WPU does not receive the manual operation commands after these minutes, it wil go back to automatic mode.
+    
   domain: automation
   input:
     mqtt_topic:
@@ -70,7 +79,7 @@ action:
     - service: input_boolean.turn_{{ trigger.to_state.state }}
       data: {}
       target:
-        entity_id: input_boolean.warmtepomp_tapwater_eco
+        entity_id: !input eco_active
         
   - alias: Eco active on, sending mqtt message
     conditions:
@@ -78,48 +87,41 @@ action:
       id:
       - eco_active_changed
       - every_5_min
-    - condition: template
-      value_template: "{{ trigger.to_state.state == 'on' }}"
     - condition: state
       entity_id: !input eco_active
       state: "on"
-      for:
-        hours: 0
-        minutes: 0
-        seconds: 2
     sequence:
     - service: mqtt.publish
       data:
         payload: >-
-          { "manual_operation_index": 36,   "manual_operation_datatype": 0,
-          "manual_operation_value": 0,   "manual_operation_checked": 1 }
-      qos: 0
-      retain: true
-      topic: !input mqtt_topic
+          { "manual_operation_index": 36, "manual_operation_datatype": 0, "manual_operation_value": 0, "manual_operation_checked": 1 }
+        retain: true
+        topic: !input mqtt_topic
+        
   - alias: Eco active off, sending mqtt message
     conditions:
     - condition: trigger
       id:
       - eco_active_changed
-      - every_5_min
-    - condition: template
-      value_template: "{{ trigger.to_state.state == 'off' }}"
     - condition: state
       entity_id: !input eco_active
       state: "off"
-      for:
-        hours: 0
-        minutes: 0
-        seconds: 2
     sequence:
-    - service: mqtt.publish
-      data:
-        payload: >-
-          { "manual_operation_index": 36,   "manual_operation_datatype": 0,
-          "manual_operation_value": 0,   "manual_operation_checked": 1 }
-      qos: 0
-      retain: true
-      topic: !input mqtt_topic
+    - repeat:
+        count: 3
+        sequence:
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 1
+            milliseconds: 0
+        - service: mqtt.publish
+          data:
+            payload: >-
+              { "manual_operation_index": 36, "manual_operation_datatype": 0, "manual_operation_value": 2, "manual_operation_checked": 0 }
+            retain: true
+            topic: !input mqtt_topic
+    
 mode: queued
 trace:
   stored_traces: 10
