@@ -3,14 +3,6 @@ blueprint:
   description: 
   domain: automation
   input:
-    thermostat:
-      name: Thermostat
-      description: This must be a Generic Thermostat entity
-      selector:
-        entity:
-          domain:
-          - climate
-          multiple: false
     mqtt_topic:
       name: MQTT Command Topic
       description: 
@@ -23,7 +15,23 @@ blueprint:
           domain:
           - schedule
           multiple: false
-  source_url: https://raw.githubusercontent.com/Onl1ne1373/home-assistant-blueprints/main/tapwater.yaml
+    schedule_active:
+      name: Schedule active
+      description: This must be a switch/input_boolean helper. With this you can disable the schedule without removing all scheduled parts.
+      selector:
+        entity:
+          domain:
+          - input_boolean
+          multiple: false
+    eco_active:
+      name: Eco active
+      description: This must be a switch/input_boolean helper. Changed by the schedule. With this you can manually change the current state.
+      selector:
+        entity:
+          domain:
+          - input_boolean
+          multiple: false
+  source_url: https://raw.githubusercontent.com/Onl1ne1373/home-assistant-blueprints/main/wpu-tapwater.yaml
 trigger:
 - platform: state
   entity_id: !input schedule
@@ -33,13 +41,16 @@ variables:
 condition:
 action:
 - choose:
-  - alias: Schedule changed to off, so change to normal setpoint
+  - alias: Schedule changed, change if schedule active
     conditions:
     - condition: trigger
       id:
       - schedule_changed
     - condition: template
-      value_template: '{{ trigger.to_state.state  == "off" }}'
+      value_template: "{{ trigger.to_state.state in ['on', 'off'] }}"
+    - condition: state
+      entity_id: !input schedule_active
+      state: "on"
     sequence:
     - service: input_boolean.turn_{{ trigger.to_state.state }}
       data: {}
