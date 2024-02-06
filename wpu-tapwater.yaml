@@ -1,0 +1,125 @@
+blueprint:
+  name: Tapwater Eco Schedule
+  description: >
+    # Tapwater Eco Schedule
+    
+    A time schedule to set tapwater heating to eco, effectively disabling it.
+    
+    This blueprint must be used with the addon of Arjen Hiemstra: https://www.nrgwatch.nl/product/itho-non-cve-wifi-module
+    But the manual operation mode used is only available in the beta firmware of vliegnerd.
+    This beta firmware and discussion are available here: https://gathering.tweakers.net/forum/list_messages/2154474/0 
+  domain: automation
+  input:
+    mqtt_topic:
+      name: MQTT Command Topic
+      description: The command topic this blueprint publishes its commands on
+      default: itho/cmd
+    schedule:
+      name: Schedule
+      description: A time schedule to set tapwater heating to eco
+      selector:
+        entity:
+          domain:
+          - schedule
+          multiple: false
+    schedule_active:
+      name: Schedule active
+      description: This must be a switch/input_boolean helper. With this you can disable the schedule without removing all scheduled parts.
+      selector:
+        entity:
+          domain:
+          - input_boolean
+          multiple: false
+    eco_active:
+      name: Eco active
+      description: This must be a switch/input_boolean helper. Changed by the schedule. With this you can manually change the current state.
+      selector:
+        entity:
+          domain:
+          - input_boolean
+          multiple: false
+  source_url: https://raw.githubusercontent.com/Onl1ne1373/home-assistant-blueprints/main/wpu-tapwater.yaml
+  
+trigger:
+- platform: state
+  entity_id: !input schedule
+  id: schedule_changed
+- platform: state
+  entity_id: !input eco_active
+  id: eco_active_changed
+- platform: time_pattern
+  minutes: /5
+  id: every_5_min
+  
+# variables:
+
+condition:
+action:
+- choose:
+  - alias: Schedule changed, change if schedule active
+    conditions:
+    - condition: trigger
+      id:
+      - schedule_changed
+    - condition: template
+      value_template: "{{ trigger.to_state.state in ['on', 'off'] }}"
+    - condition: state
+      entity_id: !input schedule_active
+      state: "on"
+    sequence:
+    - service: input_boolean.turn_{{ trigger.to_state.state }}
+      data: {}
+      target:
+        entity_id: input_boolean.warmtepomp_tapwater_eco
+        
+  - alias: Eco active on, sending mqtt message
+    conditions:
+    - condition: trigger
+      id:
+      - eco_active_changed
+      - every_5_min
+    - condition: template
+      value_template: "{{ trigger.to_state.state == 'on' }}"
+    - condition: state
+      entity_id: !input eco_active
+      state: "on"
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 2
+    sequence:
+    - service: mqtt.publish
+      data:
+        payload: >-
+          { "manual_operation_index": 36,   "manual_operation_datatype": 0,
+          "manual_operation_value": 0,   "manual_operation_checked": 1 }
+      qos: 0
+      retain: true
+      topic: !input mqtt_topic
+  - alias: Eco active off, sending mqtt message
+    conditions:
+    - condition: trigger
+      id:
+      - eco_active_changed
+      - every_5_min
+    - condition: template
+      value_template: "{{ trigger.to_state.state == 'off' }}"
+    - condition: state
+      entity_id: !input eco_active
+      state: "off"
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 2
+    sequence:
+    - service: mqtt.publish
+      data:
+        payload: >-
+          { "manual_operation_index": 36,   "manual_operation_datatype": 0,
+          "manual_operation_value": 0,   "manual_operation_checked": 1 }
+      qos: 0
+      retain: true
+      topic: !input mqtt_topic
+mode: queued
+trace:
+  stored_traces: 10
