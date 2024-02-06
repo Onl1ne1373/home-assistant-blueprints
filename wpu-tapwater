@@ -1,0 +1,51 @@
+blueprint:
+  name: Tapwater
+  description: 
+  domain: automation
+  input:
+    thermostat:
+      name: Thermostat
+      description: This must be a Generic Thermostat entity
+      selector:
+        entity:
+          domain:
+          - climate
+          multiple: false
+    mqtt_topic:
+      name: MQTT Command Topic
+      description: 
+      default: itho/cmd
+    schedule:
+      name: Schedule
+      description: A time schedule to disable tapwater heating
+      selector:
+        entity:
+          domain:
+          - schedule
+          multiple: false
+  source_url: https://raw.githubusercontent.com/Onl1ne1373/home-assistant-blueprints/main/tapwater.yaml
+trigger:
+- platform: state
+  entity_id: !input schedule
+  id: schedule_changed
+variables:
+
+condition:
+action:
+- choose:
+  - alias: Schedule changed to off, so change to normal setpoint
+    conditions:
+    - condition: trigger
+      id:
+      - schedule_changed
+    - condition: template
+      value_template: '{{ trigger.to_state.state  == "off" }}'
+    sequence:
+    - service: input_boolean.turn_{{ trigger.to_state.state }}
+      data: {}
+      target:
+        entity_id: input_boolean.warmtepomp_tapwater_eco
+
+mode: queued
+trace:
+  stored_traces: 10
