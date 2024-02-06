@@ -1,5 +1,6 @@
 blueprint:
   name: Spider
+  domain: automation
   description: >
     # Spider
     
@@ -41,7 +42,7 @@ blueprint:
     
     The target_sensor is the entity that holds the room temperature. 
   
-  domain: automation
+
   input:
     thermostat:
       name: Thermostat
@@ -100,8 +101,6 @@ variables:
   thermostat: !input "thermostat"
   setpoint: '{{ state_attr(thermostat, "temperature") }}'
   setpoint_payload: '{{ ("%02X" % ((setpoint | float * 2)) | round)}}'
-  
-condition:
 
 action:
   - choose:
