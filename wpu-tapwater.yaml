@@ -1,5 +1,6 @@
 blueprint:
   name: Tapwater Eco Schedule
+  domain: automation
   description: >
     # Tapwater Eco Schedule
     
@@ -17,7 +18,6 @@ blueprint:
     The manual operation time should be set at 30 min, this is done by setting 4 in WPU 5G heatpump settings.
     If for whatever reason the WPU does not receive the manual operation commands after these minutes, it wil go back to automatic mode.
     
-  domain: automation
   input:
     mqtt_topic:
       name: MQTT Command Topic
@@ -29,7 +29,7 @@ blueprint:
       selector:
         entity:
           domain:
-          - schedule
+            - schedule
           multiple: false
     schedule_active:
       name: Schedule active
@@ -37,7 +37,7 @@ blueprint:
       selector:
         entity:
           domain:
-          - input_boolean
+            - input_boolean
           multiple: false
     eco_active:
       name: Eco active
@@ -45,82 +45,79 @@ blueprint:
       selector:
         entity:
           domain:
-          - input_boolean
+            - input_boolean
           multiple: false
   source_url: https://raw.githubusercontent.com/Onl1ne1373/home-assistant-blueprints/main/wpu-tapwater.yaml
   
 trigger:
-- platform: state
-  entity_id: !input schedule
-  id: schedule_changed
-- platform: state
-  entity_id: !input eco_active
-  id: eco_active_changed
-- platform: time_pattern
-  minutes: /5
-  id: every_5_min
-  
-# variables:
+  - platform: state
+    entity_id: !input schedule
+    id: schedule_changed
+  - platform: state
+    entity_id: !input eco_active
+    id: eco_active_changed
+  - platform: time_pattern
+    minutes: /5
+    id: every_5_min
 
-condition:
 action:
-- choose:
-  - alias: Schedule changed, change if schedule active
-    conditions:
-    - condition: trigger
-      id:
-      - schedule_changed
-    - condition: template
-      value_template: "{{ trigger.to_state.state in ['on', 'off'] }}"
-    - condition: state
-      entity_id: !input schedule_active
-      state: "on"
-    sequence:
-    - service: input_boolean.turn_{{ trigger.to_state.state }}
-      data: {}
-      target:
-        entity_id: !input eco_active
-        
-  - alias: Eco active on, sending mqtt message
-    conditions:
-    - condition: trigger
-      id:
-      - eco_active_changed
-      - every_5_min
-    - condition: state
-      entity_id: !input eco_active
-      state: "on"
-    sequence:
-    - service: mqtt.publish
-      data:
-        payload: >-
-          { "manual_operation_index": 36, "manual_operation_datatype": 0, "manual_operation_value": 0, "manual_operation_checked": 1 }
-        retain: true
-        topic: !input mqtt_topic
-        
-  - alias: Eco active off, sending mqtt message
-    conditions:
-    - condition: trigger
-      id:
-      - eco_active_changed
-    - condition: state
-      entity_id: !input eco_active
-      state: "off"
-    sequence:
-    - repeat:
-        count: 3
-        sequence:
-        - delay:
-            hours: 0
-            minutes: 0
-            seconds: 1
-            milliseconds: 0
+  - choose:
+    - alias: Schedule changed, change if schedule active
+      conditions:
+        - condition: trigger
+          id:
+           - schedule_changed
+        - condition: template
+          value_template: "{{ trigger.to_state.state in ['on', 'off'] }}"
+        - condition: state
+          entity_id: !input schedule_active
+          state: "on"
+      sequence:
+        - service: input_boolean.turn_{{ trigger.to_state.state }}
+          data: {}
+          target:
+            entity_id: !input eco_active
+          
+    - alias: Eco active on, sending mqtt message
+      conditions:
+        - condition: trigger
+          id:
+            - eco_active_changed
+            - every_5_min
+        - condition: state
+          entity_id: !input eco_active
+          state: "on"
+      sequence:
         - service: mqtt.publish
           data:
             payload: >-
-              { "manual_operation_index": 36, "manual_operation_datatype": 0, "manual_operation_value": 2, "manual_operation_checked": 0 }
+              { "manual_operation_index": 36, "manual_operation_datatype": 0, "manual_operation_value": 0, "manual_operation_checked": 1 }
             retain: true
             topic: !input mqtt_topic
+          
+    - alias: Eco active off, sending mqtt message
+      conditions:
+        - condition: trigger
+          id:
+            - eco_active_changed
+        - condition: state
+          entity_id: !input eco_active
+          state: "off"
+      sequence:
+        - repeat:
+            count: 3
+            sequence:
+              - delay:
+                  hours: 0
+                  minutes: 0
+                  seconds: 1
+                  milliseconds: 0
+              - service: mqtt.publish
+                data:
+                  payload: >-
+                    { "manual_operation_index": 36, "manual_operation_datatype": 0, "manual_operation_value": 2, "manual_operation_checked": 0 }
+                  retain: true
+                  topic: !input mqtt_topic
     
 mode: queued
 trace:
