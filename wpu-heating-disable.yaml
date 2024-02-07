@@ -55,9 +55,15 @@ trigger:
   - platform: state
     entity_id: !input heating_disabled
     id: heating_disabled_changed
+  - platform: state
+    entity_id: !input schedule_active
+    id: schedule_active_changed
   - platform: time_pattern
     minutes: /5
     id: every_5_min
+
+variables:
+  schedule: !input schedule
 
 action:
   - choose:
@@ -73,6 +79,34 @@ action:
           state: "on"
       sequence:
       - service: input_boolean.turn_{{ trigger.to_state.state }}
+        data: {}
+        target:
+          entity_id: !input heating_disabled
+
+    - alias: Schedule active off
+      conditions:
+        - condition: trigger
+          id:
+            - schedule_active_changed
+        - condition: state
+          entity_id: !input schedule_active
+          state: "off"
+      sequence:
+      - service: input_boolean.turn_off
+        data: {}
+        target:
+          entity_id: !input heating_disabled
+          
+    - alias: Schedule active on
+      conditions:
+        - condition: trigger
+          id:
+            - schedule_active_changed
+        - condition: state
+          entity_id: !input schedule_active
+          state: "on"
+      sequence:
+      - service: input_boolean.turn_{{ states(schedule) }}
         data: {}
         target:
           entity_id: !input heating_disabled
