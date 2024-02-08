@@ -124,7 +124,7 @@ action:
               payload: >
                 0001FF{{bind_address}}
       
-      - alias: "Received setpoint message from ramses"
+      - alias: "Received request setpoint message from ramses"
         conditions:
           - condition: trigger
             id:
@@ -143,6 +143,36 @@ action:
               code: 01FF
               payload: >
                 008080{{ setpoint_payload }}28D0000000143C80800000B40080800280FF80040000
+                
+      - alias: "Received write setpoint message from ramses"
+        conditions:
+          - condition: trigger
+            id:
+              - message_received
+          - condition: template
+            value_template: '{{ trigger.event.data.verb == " W" }}'
+          - condition: template
+            value_template: '{{ trigger.event.data.code == "22C9" }}'
+          - condition: template
+            value_template: '{{ trigger.event.data.src == spider_address }}'
+          - condition: template
+            value_template: '{{ trigger.event.data.dst.startswith("18:") }}'
+        sequence:
+          - variables:
+              setpoint: '{{ trigger.event.data.payload.setpoint_bounds[0] }}'
+              setpoint_hex: '{{ "%04X" % ((setpoint * 100) | int) }}'
+          - service: climate.set_temperature
+            target:
+              entity_id: !input thermostat
+            data:
+              temperature: '{{ setpoint }}'
+          - service: ramses_cc.send_packet
+            data:
+              device_id: !input spider_address
+              verb: I
+              code: 22C9
+              payload: >
+                00{{setpoint_hex}}080201
                
       - alias: "Setpoint changed in Generic Thermostat"
         conditions:
