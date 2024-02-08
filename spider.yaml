@@ -17,7 +17,7 @@ blueprint:
     ramses_cc:
       advanced_features:
         send_packet: true
-        message_events: "(RQ.* 01FF |I.* 1FC9 )"
+        message_events: "(RQ.* 01FF | I.* 1FC9 | W.* 22C9 )"
     
     ```
     
