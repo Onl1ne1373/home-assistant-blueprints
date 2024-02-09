@@ -4,7 +4,7 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.10**
+    **Version: 1.11**
     
     Handle Spider Ramses communication
     
@@ -17,7 +17,7 @@ blueprint:
     ramses_cc:
       advanced_features:
         send_packet: true
-        message_events: "(RQ.* 01FF | I.* 1FC9 | W.* 22C9 )"
+        message_events: "(RQ.* 01FF | I.* 1FC9 |( I| W).* 22C9 )"
     
     ```
     
@@ -50,6 +50,9 @@ blueprint:
       selector:
         entity:
           domain: climate
+    gateway_address:
+      name: Gateway Address
+      description: The address of the HGI80 or evofw3 (starting with 18)
     spider_address:
       name: Spider Address
       description: The Spider address (starting with 21)
@@ -97,7 +100,8 @@ trigger:
     
 variables:
   spider_address: !input "spider_address"
-  bind_address: '{{ "%02X" % ((spider_address[:2] | int) * (2 ** 18) + (spider_address[-6:] | int)) }}'
+  gateway_address: !input "gateway_address"
+  bind_address: '{{ "%02X" % ((gateway_address[:2] | int) * (2 ** 18) + (gateway_address[-6:] | int)) }}'
   thermostat: !input "thermostat"
   setpoint: '{{ state_attr(thermostat, "temperature") }}'
   setpoint_payload: '{{ ("%02X" % ((setpoint | float * 2)) | round)}}'
