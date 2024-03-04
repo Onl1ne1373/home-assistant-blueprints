@@ -4,7 +4,7 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.11**
+    **Version: 1.12**
     
     Handle Spider Ramses communication
     
@@ -119,6 +119,8 @@ action:
             value_template: '{{ trigger.event.data.code == "1FC9" }}'
           - condition: template
             value_template: '{{ trigger.event.data.src == spider_address }}'
+          - condition: template
+            value_template: '{{ " 0022" in trigger.event.data.packet }}'
         sequence:
           - service: ramses_cc.send_packet
             data:
