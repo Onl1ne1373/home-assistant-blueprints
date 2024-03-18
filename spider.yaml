@@ -4,7 +4,7 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.12**
+    **Version: 1.13**
     
     Handle Spider Ramses communication
     
@@ -186,13 +186,21 @@ action:
             id:
               - setpoint_changed
         sequence:
-          - service: ramses_cc.send_packet
-            data:
-              device_id: !input spider_address
-              verb: W
-              code: 01FF
-              payload: >
-                008080{{ setpoint_payload }}28D0000000143C80800000B40080800280FF80040000
+          - repeat:
+              count: 3
+              sequence:
+              - delay:
+                  hours: 0
+                  minutes: 0
+                  seconds: 1
+                  milliseconds: 0
+              - service: ramses_cc.send_packet
+                data:
+                  device_id: !input spider_address
+                  verb: W
+                  code: 01FF
+                  payload: >
+                    008080{{ setpoint_payload }}28D0000000143C80800000B40080800280FF80040000
       - alias: "Schedule changed to on, so change to schedule setpoint"
         conditions:
           - condition: trigger
