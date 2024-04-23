@@ -4,7 +4,7 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.13**
+    **Version: 1.14**
     
     Handle Spider Ramses communication
     
@@ -85,6 +85,12 @@ blueprint:
       selector:
         entity:
           domain: schedule
+    manual_spider_enabled:
+      name: Enable Spider Manual input
+      description: If true, enable manual input on Spider until next setpoint. Working for main thermostat, not for room thermostats at the moment. 
+      default: false
+      selector:
+        boolean:
 
 trigger:
   - platform: event
@@ -105,6 +111,7 @@ variables:
   thermostat: !input "thermostat"
   setpoint: '{{ state_attr(thermostat, "temperature") }}'
   setpoint_payload: '{{ ("%02X" % ((setpoint | float * 2)) | round)}}'
+  manual_spider_enabled: !input manual_spider_enabled
 
 action:
   - choose:
@@ -155,6 +162,8 @@ action:
           - condition: trigger
             id:
               - message_received
+          - condition: template
+            value_template: '{{ manual_spider_enabled == true }}'
           - condition: template
             value_template: '{{ trigger.event.data.verb == " W" }}'
           - condition: template
