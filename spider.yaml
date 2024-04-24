@@ -4,7 +4,7 @@ blueprint:
   description: >
     # Spider
     
-    **Version: 1.14**
+    **Version: 1.15**
     
     Handle Spider Ramses communication
     
@@ -110,7 +110,9 @@ variables:
   bind_address: '{{ "%02X" % ((gateway_address[:2] | int) * (2 ** 18) + (gateway_address[-6:] | int)) }}'
   thermostat: !input "thermostat"
   setpoint: '{{ state_attr(thermostat, "temperature") }}'
+  setpoint_cooling: '{{ state_attr(thermostat, "temperature") + 1 }}'
   setpoint_payload: '{{ ("%02X" % ((setpoint | float * 2)) | round)}}'
+  setpoint_cooling_payload: '{{ ("%02X" % ((setpoint_cooling | float * 2)) | round)}}'
   manual_spider_enabled: !input manual_spider_enabled
 
 action:
@@ -155,7 +157,7 @@ action:
               verb: RP
               code: 01FF
               payload: >
-                008080{{ setpoint_payload }}28D0000000143C80800000B40080800280FF80040000
+                008080{{ setpoint_payload }}{{ setpoint_cooling_payload }}D0000000143C80800000B40080800280FF80040000
                 
       - alias: "Received write setpoint message from ramses"
         conditions:
@@ -209,7 +211,7 @@ action:
                   verb: W
                   code: 01FF
                   payload: >
-                    008080{{ setpoint_payload }}28D0000000143C80800000B40080800280FF80040000
+                    008080{{ setpoint_payload }}{{ setpoint_cooling_payload }}D0000000143C80800000B40080800280FF80040000
       - alias: "Schedule changed to on, so change to schedule setpoint"
         conditions:
           - condition: trigger
